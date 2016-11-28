@@ -31,7 +31,7 @@ class GitHubEventResponder:
             [[InlineKeyboardButton(text, url)]]
         )
 
-    def push(self, compareButton=True):
+    def push(self):
         # forced = d['forced']
         text = '{} pushed {} to branch {} in {}.'.format(
             self.sender['text'],
@@ -42,14 +42,21 @@ class GitHubEventResponder:
         action = self._cta('View Changes', self.payload['compare'])
         return {'text': text, 'reply_markup': action}
 
-    def create(self, compareButton=True):
-        text = '{} created {} {} in {}.'.format(
+    def branchtag(self, action):
+        text = '{} {} {} {} in {}.'.format(
             self.sender['text'],
+            action,
             self.payload['ref_type'],
             self.payload['ref'],
             self.repo['text'],
         )
         return {'text': text}
+
+    def create(self):
+        return self.branchtag('created')
+
+    def delete(self):
+        return self.branchtag('deleted')
 
     def gollum(self):
         page = self.payload['pages'][0]
