@@ -49,7 +49,6 @@ def set_webhook():
 @app.route('/github', methods=['POST'])
 def github():
     headers = request.headers
-    # raw = request.data
     payload = request.json
     repository = payload['repository']['full_name']
 
@@ -68,14 +67,15 @@ def github():
                          'associated with this chat, but with a bad secret.')
         abort(403, 'bad secret')
 
-    responder = GitHubEventResponder(headers.get('X-GitHub-Event'), payload)
-    res = responder.push()
-    bot.send_message(
-        chat_id,
-        parse_mode='Markdown',
-        disable_web_page_preview=True,
-        **res
-    )
+    res = GitHubEventResponder(headers.get('X-GitHub-Event'), payload)
+    message = res.get_message()
+    if message:
+        bot.send_message(
+            chat_id,
+            parse_mode='Markdown',
+            disable_web_page_preview=True,
+            **message
+        )
 
     return 'ok'
 
