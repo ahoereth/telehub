@@ -1,0 +1,12 @@
+certifi==2016.9.26
+click==6.6
+Flask==0.11.1
+future==0.16.0
+github-webhook==1.0
+itsdangerous==0.24
+Jinja2==2.8
+MarkupSafe==0.23
+python-dotenv==0.6.1
+python-telegram-bot==5.2.0
+urllib3==1.19.1
+Werkzeug==0.11.11
