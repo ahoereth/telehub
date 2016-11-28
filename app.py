@@ -11,7 +11,7 @@ from dotenv import load_dotenv, find_dotenv
 from lib.db import db
 from lib.logger import logger
 from lib.events import GitHubEventResponder
-from lib.handlers import error, start, add_repo
+from lib.handlers import error, start, add_repo, showhelp
 
 
 load_dotenv(find_dotenv())
@@ -27,6 +27,7 @@ dispatcher = Dispatcher(bot, update_queue=None, workers=0)
 
 def setup_bot():
     dispatcher.add_handler(CommandHandler('start', start))
+    dispatcher.add_handler(CommandHandler('help', showhelp))
     dispatcher.add_handler(CommandHandler('addrepo', add_repo,
                            pass_args=True, pass_chat_data=True))
     dispatcher.add_error_handler(error)
