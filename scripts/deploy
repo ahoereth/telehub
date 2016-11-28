@@ -1,0 +1,8 @@
+#!/bin/zsh
+UBERSPACE="telegit@vega.uberspace.de:~/app"
+UBERSPACE_WWW="lawly@alnilam.uberspace.de:~/html"
+
+[[ $(ssh-add -l) =~ .ssh/id_rsa ]] || ssh-add ~/.ssh/id_rsa
+
+scp -r scripts lib app.py requirements.txt $UBERSPACE/
+scp .htaccess $UBERSPACE_WWW
