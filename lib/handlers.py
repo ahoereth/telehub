@@ -43,8 +43,10 @@ issues and comments.
 
 def add_repo(bot, update, args, chat_data):
     if len(args) != 2:
-        update.message.reply_text('Please pass a repository (as \
-            `username/repository` string) and the webhook\' secret.')
+        update.message.reply_text(
+            'Please pass a repository '
+            '(as `username/repository` string) and the webhook\' secret.'
+        )
     repo, secret = args
     db[repo] = {
         'chat_id': update.message.chat.id,

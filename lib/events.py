@@ -33,50 +33,52 @@ class GitHubEventResponder:
 
     def push(self):
         # forced = d['forced']
-        text = '{} pushed {} to branch {} in {}.'.format(
+        text = '*{}*: {} pushed {} to branch `{}`.'.format(
+            self.repo['text'],
             self.sender['text'],
             sgpl(len(self.payload['commits']), 'commit', 'commits'),
-            self.payload['ref'].replace('/refs/heads/', ''),
-            self.repo['text'],
+            self.payload['ref'].replace('refs/heads/', ''),
         )
         action = self._cta('View Changes', self.payload['compare'])
         return {'text': text, 'reply_markup': action}
 
-    def branchtag(self, action):
-        text = '{} {} {} {} in {}.'.format(
+    def action(self, action, tag, name):
+        text = '*{}*: {} {} {} `{}`.'.format(
+            self.repo['text'],
             self.sender['text'],
             action,
-            self.payload['ref_type'],
-            self.payload['ref'],
-            self.repo['text'],
+            actioned,
+            name,
         )
         return {'text': text}
 
     def create(self):
-        return self.branchtag('created')
+        tag, name = self.payload['ref_type'], self.payload['ref']
+        return self.act('created', tag, name)
 
     def delete(self):
-        return self.branchtag('deleted')
+        tag, name = self.payload['ref_type'], self.payload['ref']
+        return self.act('deleted', tag, name)
 
     def gollum(self):
         page = self.payload['pages'][0]
-        text = '{} {} {} in {}: *{}*.'.format(
+        text = '*{}*: {} {} _{}_: _{}_'.format(
+            self.repo['text'],
             self.sender['text'],
             page['action'],
             page['title'],
-            self.repo['text'],
             page['summary'],
         )
         action = self._cta('View Page', page['html_url'])
         return {'text': text, 'reply_markup': action}
 
     def post(self, posttype, data):
-        text = '{} created {} *{}* in {}: *{}*.'.format(
+        text = '*{}*: {} created {} _{}_: _{}_.'.format(
+            self.repo['text'],
             self.sender['text'],
             posttype,
             data['title'],
-            self.repo['text'],
-            data['body'][:100] + ' [...]' if len(data['body']) > 100 else '',
+            data['body'][:255] + ' [...]' if len(data['body']) > 255 else '',
         )
         action = self._cta('View %s' % posttype, data['html_url'])
         return {'text': text, 'reply_markup': action}
@@ -87,14 +89,57 @@ class GitHubEventResponder:
     def pull_request(self):
         return self.post('pull request', self.payload['pull_request'])
 
-    def issue_comment(self):
-        issue = self.payload['issue']
-        comment = self.payload['comment']
+    def comment(self, posttype, comment):
         body = comment['body']
-        text = '{} commented on {}: *{}* in {}: *{}*.'.format(
+        text = '*{}*: {} commented on {} {}: _{}_'.format(
+            self.repo['text'],
             self.sender['text'],
-            markdown_link('#' + issue['number'], issue['html_url']),
-            body[:255] + ' [...]' if len(body) > 100 else '',
+            posttype,
+            comment['title'],
+            body[:255] + ' [...]' if len(body) > 255 else '',
         )
         action = self._cta('View Comment', comment['html_url'])
         return {'text': text, 'reply_markup': action}
+
+    def issue_comment(self):
+        issue = self.payload['issue']
+        comment = self.payload['comment']
+        return self.comment('issue', dict({
+            'title': '#' + issue['number'],
+        }, **pick(comment, 'html_url', 'body')))
+
+    def commit_comment(self):
+        return self.comment(dict({
+            'title': comment['commit_id'][:7]
+        }, **pick(comment, 'html_url', 'body')))
+
+    def fork(self):
+        text = '{} forked *{}*'.format(
+            self.sender['text'],
+            self.repo['text'],
+        )
+        return {'text': text}
+
+    def member(self):
+        member = self.payload['member']
+        text = '*{}*: {} added {} as a collaborator.'.format(
+            self.repo['text'],
+            self.sender['text'],
+            markdown_link(member['login'], member['html_url']),
+        )
+        return {'text': text}
+
+    def milestone(self):
+        stone = self.payload['stone']
+        return self.act(
+            action=self.payload['action'],
+            tag='milestone',
+            name=markdown_link(stone['title'], stone['html_url'])
+        )
+
+    def public(self):
+        text = '{} made *{}* public'.format(
+            self.sender['text'],
+            self.repo['text'],
+        )
+        return {'text': text}
