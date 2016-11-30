@@ -66,7 +66,10 @@ class GitHubEventResponder:
         # forced = d['forced']
         return self._repo_action(self._user_action(
             'pushed {} to branch `{}`.'.format(
-                sgpl(len(self.payload['commits']), 'commit', 'commits'),
+                link(
+                    sgpl(len(self.payload['commits']), 'commit', 'commits'),
+                    self.payload['compare'],
+                ),
                 self.payload['ref'].replace('refs/heads/', ''),
             )
         ))

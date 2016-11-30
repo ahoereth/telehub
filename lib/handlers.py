@@ -38,11 +38,12 @@ issues and comments.
     update.message.reply_text(msg, parse_mode='Markdown')
 
 
-def add_repo(bot, update, args, chat_data):
+def subscribe(bot, update, args, chat_data):
     if len(args) != 2:
         update.message.reply_text(
             'Please pass a repository '
-            '(as `username/repository` string) and the webhook\' secret.'
+            '(as `username/repository` string) and the webhook secret.',
+            parse_mode='Markdown',
         )
 
     repo, secret = args

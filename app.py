@@ -9,7 +9,7 @@ from telegram.ext import Dispatcher, CommandHandler
 from dotenv import load_dotenv, find_dotenv
 
 from lib import db, logger, GitHubEventResponder
-from lib import error, start, add_repo, showhelp
+from lib import error, start, subscribe, showhelp
 
 
 load_dotenv(find_dotenv())
@@ -26,7 +26,7 @@ dispatcher = Dispatcher(bot, update_queue=None, workers=0)
 def setup_bot():
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('help', showhelp))
-    dispatcher.add_handler(CommandHandler('addrepo', add_repo,
+    dispatcher.add_handler(CommandHandler('subscribe', subscribe,
                            pass_args=True, pass_chat_data=True))
     dispatcher.add_error_handler(error)
 
