@@ -1,29 +1,33 @@
-from telegram.inlinekeyboardmarkup import InlineKeyboardMarkup
-from telegram.inlinekeyboardbutton import InlineKeyboardButton
-from lib.utils import pick, sgpl, markdown_link
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from lib.utils import pick, sgpl, markdown_link as link
 
 
 class GitHubEventResponder:
     def __init__(self, event, payload):
-        self.payload = payload
         self.event = event
+        self.payload = payload
         self.repo = self._parse_repository(payload['repository'])
         self.sender = self._parse_sender(payload['sender'])
 
     def get_message(self):
         if hasattr(self, self.event):
-            return getattr(self, self.event)()
+            msg = getattr(self, self.event)()
+            msg = {'text': msg} if isinstance(msg, str) else msg
+            return dict({
+                'parse_mode': 'Markdown',
+                'disable_web_page_preview': True,
+            }, **msg)
         else:
-            return False
+            return None
 
     def _parse_sender(self, raw):
-        repo = pick(raw, 'login', 'html_url')
-        repo['text'] = markdown_link(raw['login'], raw['html_url'])
-        return repo
+        sender = pick(raw, 'login', 'html_url')
+        sender['text'] = link(raw['login'], raw['html_url'])
+        return sender
 
     def _parse_repository(self, raw):
-        repo = pick(raw, 'full_name', 'name', 'url', 'default_branch')
-        repo['text'] = markdown_link(raw['full_name'], raw['url'])
+        repo = pick(raw, 'full_name', 'name', 'html_url', 'default_branch')
+        repo['text'] = link(raw['full_name'], raw['html_url'])
         return repo
 
     def _cta(self, text, url):
@@ -31,118 +35,121 @@ class GitHubEventResponder:
             [[InlineKeyboardButton(text, url)]]
         )
 
-    def push(self):
-        # forced = d['forced']
-        text = '*{}*: {} pushed {} to branch `{}`.'.format(
-            self.repo['text'],
-            self.sender['text'],
-            sgpl(len(self.payload['commits']), 'commit', 'commits'),
-            self.payload['ref'].replace('refs/heads/', ''),
-        )
-        action = self._cta('View Changes', self.payload['compare'])
-        return {'text': text, 'reply_markup': action}
+    def _repo_action(self, text):
+        return '{}: {}'.format(self.repo['text'], text)
 
-    def action(self, action, tag, name):
-        text = '*{}*: {} {} {} `{}`.'.format(
-            self.repo['text'],
-            self.sender['text'],
+    def _user_action(self, text):
+        return '{} {}'.format(self.sender['text'], text)
+
+    def _createdelete_action(self, action, reftype, ref):
+        return self._repo_action(self._user_action('{} {} `{}`.'.format(
+            action, reftype, ref,
+        )))
+
+    def _post_action(self, action, posttype, title, message, url):
+        return self._repo_action(self._user_action('{} {} _{}_: _{}_'.format(
             action,
-            actioned,
-            name,
-        )
-        return {'text': text}
-
-    def create(self):
-        tag, name = self.payload['ref_type'], self.payload['ref']
-        return self.act('created', tag, name)
-
-    def delete(self):
-        tag, name = self.payload['ref_type'], self.payload['ref']
-        return self.act('deleted', tag, name)
-
-    def gollum(self):
-        page = self.payload['pages'][0]
-        text = '*{}*: {} {} _{}_: _{}_'.format(
-            self.repo['text'],
-            self.sender['text'],
-            page['action'],
-            page['title'],
-            page['summary'],
-        )
-        action = self._cta('View Page', page['html_url'])
-        return {'text': text, 'reply_markup': action}
-
-    def post(self, posttype, data):
-        text = '*{}*: {} created {} _{}_: _{}_.'.format(
-            self.repo['text'],
-            self.sender['text'],
             posttype,
-            data['title'],
+            title,
+            message,
+        )))
+
+    def _comment_action(self, posttype, data):
+        return self._post_action(
+            'commented on',
+            posttype,
+            link(data['title'], data['html_url']),
             data['body'][:255] + ' [...]' if len(data['body']) > 255 else '',
         )
-        action = self._cta('View %s' % posttype, data['html_url'])
-        return {'text': text, 'reply_markup': action}
+
+    def push(self):
+        # forced = d['forced']
+        return self._user_action('pushed {} to branch `{}`.'.format(
+            sgpl(len(self.payload['commits']), 'commit', 'commits'),
+            self.payload['ref'].replace('refs/heads/', ''),
+        ))
+        action = self._cta('View Changes', self.payload['compare'])
+        return {'text': self._repo_action(text), 'reply_markup': action}
+
+    def create(self):
+        return self._createdelete_action(
+            'created',
+            self.payload['ref_type'],
+            self.payload['ref'],
+        )
+
+    def delete(self):
+        return self._createdelete_action(
+            'deleted',
+            self.payload['ref_type'],
+            self.payload['ref'],
+        )
+
+    def gollum(self):
+        return self._post_action(
+            self.payload['pages'][0]['action'],
+            self.payload['pages'][0]['title'],
+            self.payload['pages'][0]['summary'],
+            self.payload['pages'][0]['html_url'],
+        )
 
     def issue(self):
-        return self.post('issue', self.payload['issue'])
+        data = self.payload['issue'],
+        return self._post_action(
+            'created',
+            'issue',
+            data['title'],
+            data['body'][:255] + ' [...]' if len(data['body']) > 255 else '',
+            data['html_url'],
+        )
 
     def pull_request(self):
-        return self.post('pull request', self.payload['pull_request'])
-
-    def comment(self, posttype, comment):
-        body = comment['body']
-        text = '*{}*: {} commented on {} {}: _{}_'.format(
-            self.repo['text'],
-            self.sender['text'],
-            posttype,
-            comment['title'],
-            body[:255] + ' [...]' if len(body) > 255 else '',
+        data = self.payload['pull_request']
+        return self._post_action(
+            'created',
+            'pull request',
+            data['title'],
+            data['body'][:255] + ' [...]' if len(data['body']) > 255 else '',
+            data['html_url'],
         )
-        action = self._cta('View Comment', comment['html_url'])
-        return {'text': text, 'reply_markup': action}
 
     def issue_comment(self):
-        issue = self.payload['issue']
-        comment = self.payload['comment']
-        return self.comment('issue', dict({
-            'title': '#' + issue['number'],
-        }, **pick(comment, 'html_url', 'body')))
+        return self._comment_action('issue', dict({
+            'title': '#' + self.payload['issue']['number'],
+        }, **pick(self.payload['comment'], 'html_url', 'body')))
 
     def commit_comment(self):
-        return self.comment(dict({
-            'title': comment['commit_id'][:7]
-        }, **pick(comment, 'html_url', 'body')))
+        return self._comment_action(dict({
+            'title': self.payload['comment']['commit_id'][:7]
+        }, **pick(self.payload['comment'], 'html_url', 'body')))
 
     def fork(self):
-        text = '{} forked *{}*'.format(
+        return self._user_action('forked {}'.format(
             self.sender['text'],
             self.repo['text'],
-        )
-        return {'text': text}
+        ))
 
     def member(self):
         member = self.payload['member']
-        text = '*{}*: {} added {} as a collaborator.'.format(
-            self.repo['text'],
-            self.sender['text'],
-            markdown_link(member['login'], member['html_url']),
-        )
-        return {'text': text}
+        return self._repo_action('{} was added as a collaborator.'.format(
+            link(member['login'], member['html_url']),
+        ))
 
     def milestone(self):
-        stone = self.payload['stone']
-        return self.act(
-            action=self.payload['action'],
-            tag='milestone',
-            name=markdown_link(stone['title'], stone['html_url'])
-        )
+        milestone = self.payload['stone']
+        return self._repo_action(self._user_action(('{} milestone {}'.format(
+            self.payload['action'],
+            link(milestone['title'], milestone['html_url'])
+        ))))
 
     def public(self):
-        text = '{} made *{}* public'.format(
-            self.sender['text'],
-            self.repo['text'],
-        )
-        return {'text': text}
+        return {
+            'text': '{} made {} public!'.format(
+                self.sender['text'],
+                self.repo['text'],
+            ),
+            'reply_markup': self._cta('View Repository', self.repo['url']),
+        }
 
     def ping(self):
-        return 'Received ping from {}'.format(self.repo['text'])
+        return 'I just received a ping from {}.'.format(self.repo['text'])
