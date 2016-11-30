@@ -31,12 +31,6 @@ def setup_bot():
     dispatcher.add_error_handler(error)
 
 
-@app.route('/%s' % os.environ.get('TOKEN'), methods=['POST'])
-def webhook_handler():
-    dispatcher.process_update(Update.de_json(request.json, bot))
-    return 'ok'
-
-
 @app.route('/set_webhook', methods=['GET', 'POST'])
 def set_webhook():
     if bot.setWebhook('https://%s/%s' % (URL, TOKEN)):
@@ -45,11 +39,24 @@ def set_webhook():
         abort(400, 'webhook setup failed')
 
 
-@app.route('/github', methods=['POST'])
+@app.route('/%s' % os.environ.get('TOKEN'), methods=['POST'])
+def telegram():
+    """Telegram webhook endpoint.
+    """
+    dispatcher.process_update(Update.de_json(request.json, bot))
+    return 'ok'
+
+
+@app.route('/', methods=['POST'])
 def github():
+    """GitHub webhook endpoint.
+    """
     headers = request.headers
     payload = request.json
     repository = payload['repository']['full_name']
+    event = headers.get('X-GitHub-Event')
+    signature = headers.get('X-Hub-Signature').split('=')[1]
+    # deliveryid = headers.get('X-GitHub-Delivery')
 
     if repository not in db:
         abort(404, 'repository not registered')
@@ -58,7 +65,6 @@ def github():
     chat_id = entry['chat_id']
     secret = bytes(entry['secret'], 'UTF-8')
 
-    signature = headers.get('X-Hub-Signature').split('=')[1]
     mac = hmac.new(secret, msg=request.data, digestmod=sha1)
     if not hmac.compare_digest(mac.hexdigest(), signature):
         logger.warn('bad secret for %s' % repository)
@@ -66,26 +72,21 @@ def github():
                          'associated with this chat, but with a bad secret.')
         abort(403, 'bad secret')
 
-    res = GitHubEventResponder(headers.get('X-GitHub-Event'), payload)
+    res = GitHubEventResponder(event, payload)
     message = res.get_message()
     if message:
-        bot.send_message(
-            chat_id,
-            parse_mode='Markdown',
-            disable_web_page_preview=True,
-            **message
-        )
-
-    return 'ok'
+        bot.send_message(chat_id, **message)
+        return 'telegram message dispatched'
+    else:
+        return 'no message to dispatch for this event'
 
 
 def main():
     try:
         setup_bot()
         app.run(host='0.0.0.0', port=PORT)
-        db.close()
     finally:
-        handle_cleanup()
+        db.close()
 
 
 if __name__ == '__main__':
