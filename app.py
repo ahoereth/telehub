@@ -8,10 +8,8 @@ from telegram import Bot, Update
 from telegram.ext import Dispatcher, CommandHandler
 from dotenv import load_dotenv, find_dotenv
 
-from lib.db import db
-from lib.logger import logger
-from lib.events import GitHubEventResponder
-from lib.handlers import error, start, add_repo, showhelp
+from lib import db, logger, GitHubEventResponder
+from lib import error, start, add_repo, showhelp
 
 
 load_dotenv(find_dotenv())

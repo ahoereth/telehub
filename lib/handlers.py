@@ -1,7 +1,5 @@
 from telegram import ReplyKeyboardMarkup
-
-from lib.logger import logger
-from lib.db import db
+from lib import logger, db
 
 
 def error(bot, update, error):
