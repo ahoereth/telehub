@@ -143,3 +143,6 @@ class GitHubEventResponder:
             self.repo['text'],
         )
         return {'text': text}
+
+    def ping(self):
+        return 'Received ping from {}'.format(self.repo['text'])
