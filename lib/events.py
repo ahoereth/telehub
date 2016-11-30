@@ -64,12 +64,12 @@ class GitHubEventResponder:
 
     def push(self):
         # forced = d['forced']
-        return self._user_action('pushed {} to branch `{}`.'.format(
-            sgpl(len(self.payload['commits']), 'commit', 'commits'),
-            self.payload['ref'].replace('refs/heads/', ''),
+        return self._repo_action(self._user_action(
+            'pushed {} to branch `{}`.'.format(
+                sgpl(len(self.payload['commits']), 'commit', 'commits'),
+                self.payload['ref'].replace('refs/heads/', ''),
+            )
         ))
-        action = self._cta('View Changes', self.payload['compare'])
-        return {'text': self._repo_action(text), 'reply_markup': action}
 
     def create(self):
         return self._createdelete_action(
