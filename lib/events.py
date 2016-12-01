@@ -90,12 +90,16 @@ class GitHubEventResponder:
 
     def gollum(self):
         page = self.payload['pages'][0]
-        return self._post_action(
-            page['action'],
-            'wiki page',
-            link(page['title'], page['html_url']),
-            page['summary'],
-        )
+        compare = '{}/_compare/{}'.format(page['html_url'], page['sha'])
+        action = page['action']
+        # page['summary'] is always None. Does not transmit edit message.
+        return self._repo_action(self._user_action(
+            '{} the wiki page "{}". {}'.format(
+                action,
+                link(page['title'], page['html_url']),
+                link('View changes', compare) if action == 'edited' else '',
+            )
+        ))
 
     def issue(self):
         data = self.payload['issue'],
