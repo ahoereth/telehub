@@ -3,7 +3,7 @@ import os
 import json
 import hmac
 from hashlib import sha1
-from flask import Flask, request, abort
+from flask import Flask, request, abort, redirect
 from telegram import Bot, Update
 from telegram.ext import Dispatcher, CommandHandler
 from dotenv import load_dotenv, find_dotenv
@@ -79,6 +79,11 @@ def github():
         return 'telegram message dispatched'
     else:
         return 'no message to dispatch for this event'
+
+
+@app.route('/', methods=['GET'])
+def landing():
+    return redirect('https://github.com/ahoereth/telehub', code=302)
 
 
 def main():
