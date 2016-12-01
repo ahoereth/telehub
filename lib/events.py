@@ -91,6 +91,7 @@ class GitHubEventResponder:
     def gollum(self):
         return self._post_action(
             self.payload['pages'][0]['action'],
+            'wiki page',
             self.payload['pages'][0]['title'],
             self.payload['pages'][0]['summary'],
             self.payload['pages'][0]['html_url'],
