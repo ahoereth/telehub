@@ -51,10 +51,11 @@ def subscribe(bot, update, args, chat_data):
         'chat_id': update.message.chat.id,
         'secret': secret,
     }
-    msg = """
-I will now notify you about events from {}. Make sure you configured a webhook
-for sending events to `https://telegit.vega.uberspace.de/`. For
-information on how to do so type `/help`.
-    """
+    msg = (
+        "I will now notify you about events from {}. Make sure you "
+        "configured a webhook for sending events to "
+        "`https://telegit.vega.uberspace.de/`. For information on "
+        "how to do so type `/help`."
+    )
 
     update.message.reply_text(msg.format(repo), parse_mode='Markdown')
