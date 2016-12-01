@@ -159,3 +159,10 @@ class GitHubEventResponder:
 
     def ping(self):
         return 'I just received a ping from {}.'.format(self.repo['text'])
+
+    def watch(self):
+        # Actually 'star'.
+        return '{} just starred {}!'.format(
+            self.sender['text'],
+            self.repo['text'],
+        )
