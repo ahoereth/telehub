@@ -46,8 +46,8 @@ class GitHubEventResponder:
             action, reftype, ref,
         )))
 
-    def _post_action(self, action, posttype, title, message, url):
-        return self._repo_action(self._user_action('{} {} _{}_: _{}_'.format(
+    def _post_action(self, action, posttype, title, message):
+        return self._repo_action(self._user_action('{} {} {}: _{}_'.format(
             action,
             posttype,
             title,
@@ -89,12 +89,12 @@ class GitHubEventResponder:
         )
 
     def gollum(self):
+        page = self.payload['pages'][0]
         return self._post_action(
-            self.payload['pages'][0]['action'],
+            page['action'],
             'wiki page',
-            self.payload['pages'][0]['title'],
-            self.payload['pages'][0]['summary'],
-            self.payload['pages'][0]['html_url'],
+            link(page['title'], page['html_url']),
+            page['summary'],
         )
 
     def issue(self):
@@ -102,9 +102,8 @@ class GitHubEventResponder:
         return self._post_action(
             'created',
             'issue',
-            data['title'],
+            link(data['title'], data['html_url']),
             data['body'][:255] + ' [...]' if len(data['body']) > 255 else '',
-            data['html_url'],
         )
 
     def pull_request(self):
@@ -112,9 +111,8 @@ class GitHubEventResponder:
         return self._post_action(
             'created',
             'pull request',
-            data['title'],
+            link(data['title'], data['html_url']),
             data['body'][:255] + ' [...]' if len(data['body']) > 255 else '',
-            data['html_url'],
         )
 
     def issue_comment(self):
