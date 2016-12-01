@@ -154,7 +154,7 @@ class GitHubEventResponder:
                 self.sender['text'],
                 self.repo['text'],
             ),
-            'reply_markup': self._cta('View Repository', self.repo['url']),
+            'reply_markup': self._cta('View Repository', self.repo['html_url'])
         }
 
     def ping(self):
