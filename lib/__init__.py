@@ -1,4 +1,6 @@
-from lib.db import db
-from lib.logger import logger
-from lib.events import GitHubEventResponder
-from lib.handlers import error, start, subscribe, showhelp
+from .db import db
+from .logger import logger
+from .events import GitHubEventResponder
+from .handlers import error, start, subscribe, showhelp
+from .routes import routes
+from .bot import bot

@@ -1,5 +1,7 @@
 from telegram import ReplyKeyboardMarkup
-from lib import logger, db
+
+from .db import db
+from .logger import logger
 
 
 def error(bot, update, error):
@@ -13,11 +15,7 @@ I can send you or a group you add me to notifications about activity
 on specified GitHub repos. I will notify you about new commits,
 issues and comments.
     """.format(update.message.from_user.first_name)
-    update.message.reply_text(
-        msg,
-        reply_markup=cta,
-        parse_mode='Markdown',
-    )
+    update.message.reply_text(msg, parse_mode='Markdown')
 
 
 def showhelp(bot, update):
@@ -40,17 +38,15 @@ issues and comments.
 
 def subscribe(bot, update, args, chat_data):
     if len(args) != 2:
-        update.message.reply_text(
+        return update.message.reply_text(
             'Please pass a repository '
             '(as `username/repository` string) and the webhook secret.',
             parse_mode='Markdown',
         )
 
     repo, secret = args
-    db[repo] = {
-        'chat_id': update.message.chat.id,
-        'secret': secret,
-    }
+    db.add(repo, update.message.chat.id, secret)
+
     msg = (
         "I will now notify you about events from {}. Make sure you "
         "configured a webhook for sending events to "

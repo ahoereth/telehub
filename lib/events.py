@@ -1,5 +1,6 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from lib.utils import pick, sgpl, markdown_link as link
+
+from .utils import pick, sgpl, markdown_link as link
 
 
 class GitHubEventResponder:
