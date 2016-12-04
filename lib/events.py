@@ -130,10 +130,7 @@ class GitHubEventResponder:
         }, **pick(self.payload['comment'], 'html_url', 'body')))
 
     def fork(self):
-        return self._user_action('forked {}'.format(
-            self.sender['text'],
-            self.repo['text'],
-        ))
+        return self._user_action('forked {}.'.format(self.repo['text']))
 
     def member(self):
         member = self.payload['member']
