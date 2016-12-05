@@ -12,8 +12,11 @@ class DB:
         self.shelf.sync()
 
     def remove(self, repo, chat_id):
-        if repo in self.shelf:
-            del self.shelf[repo]
+        if repo in self.shelf and chat_id in self.shelf[repo]:
+            if len(self.shelf[repo]) > 1:
+                del self.shelf[repo][chat_id]
+            else:
+                del self.shelf[repo]
         return True
 
     def get(self, repo):

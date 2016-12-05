@@ -32,6 +32,8 @@ issues and comments.
     *Events*: For information on which events I can handle, type `/events`.
     *Activity*: Checked!
 3. Send me a message with `/subscribe <username>/<repo> <secret>`
+
+To stop me from watching a repo for you, use `/unsubscribe <username>/<repo>`
     """
     update.message.reply_text(msg, parse_mode='Markdown')
 
@@ -54,4 +56,20 @@ def subscribe(bot, update, args, chat_data):
         "how to do so type `/help`."
     )
 
+    update.message.reply_text(msg.format(repo), parse_mode='Markdown')
+
+
+def unsubscribe(bot, update, args, chat_data):
+    if len(args) != 1:
+        return update.message.reply_text(
+            'Please pass a repository (as `username/repository` string).',
+            parse_mode='Markdown',
+        )
+
+    repo = args[0]
+    db.remove(repo, update.message.chat.id)
+    msg = (
+        'Okay, I won\'t notify you about activity in the repository '
+        '`{}` anymore.'
+    )
     update.message.reply_text(msg.format(repo), parse_mode='Markdown')
