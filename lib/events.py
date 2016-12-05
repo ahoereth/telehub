@@ -47,12 +47,12 @@ class GitHubEventResponder:
             action, reftype, ref,
         )))
 
-    def _post_action(self, action, posttype, title, message):
-        return self._repo_action(self._user_action('{} {} {}: _{}_'.format(
+    def _post_action(self, action, posttype, title, message=''):
+        return self._repo_action(self._user_action('{} {} {}{}'.format(
             action,
             posttype,
             title,
-            message,
+            ': _{}_'.format(message) if message else '.',
         )))
 
     def _comment_action(self, posttype, data):
